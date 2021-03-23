@@ -6,4 +6,6 @@ namespace utils {
     void wakeup();
     int getBatteryLvl();
     void updateBatteryLabel();
+    void wifiConnect();
+    void wifiDisconnect();
 }

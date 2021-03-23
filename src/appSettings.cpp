@@ -1,6 +1,5 @@
 #include <EEPROM.h>
 #include "config.h"
-#include "constants.h"
 #include "main.h"
 #include "appSettings.h"
 
@@ -19,15 +18,14 @@ static void slider_event_cb(lv_obj_t * slider, lv_event_t event)
 {
     if(event == LV_EVENT_VALUE_CHANGED) {
       byte value = lv_slider_get_value(slider);
-      if (!lv_slider_is_dragged(slider)) {
-        Serial.println("stopped");
-        EEPROM.write(BRIGHTNESS_EEPROM_ADD, value);
-        EEPROM.commit();
-      }
       static char buf[4]; /* max 3 bytes for number plus 1 null terminating byte */
       snprintf(buf, 4, "%u", lv_slider_get_value(slider));
       lv_label_set_text(slider_label, convert_byte_to_string(value));
       ttgo->setBrightness(value); 
+    } else if (event == LV_EVENT_RELEASED) {
+      byte value = lv_slider_get_value(slider);
+      EEPROM.write(BRIGHTNESS_EEPROM_ADD, value);
+      EEPROM.commit();
     }
 }
 

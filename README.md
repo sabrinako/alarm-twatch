@@ -27,10 +27,10 @@ I've drawn inspiration from various sources. This project would not exist withou
     - Brightness value stored in EEPROM
 
 ## Known Issues
-- Even though the screen is put to sleep during light sleep, it still detects touch
 - Alarm screen does not actually do anything yet
 - Wifi time sync automatically runs when menu option chosen
 - RARE: vibrate alarm goes off endlessly, stops when deep sleeping (hold external button 6 secs)
+- If multiple alarm pop-ups left on screen, pressing OK for the second one freezes/resets screen
 
 ## How To Build
 This project is built using PlatformIO. [Here](https://www.youtube.com/watch?v=7vOaqnmAkcg) is a good example of loading projects through PlatformIO/VSCode.

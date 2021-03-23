@@ -5,3 +5,9 @@
 #define LILYGO_WATCH_LVGL 
 
 #include <LilyGoWatch.h>
+
+#define EEPROM_SIZE 50
+#define BRIGHTNESS_EEPROM_ADD 10
+
+#define WIFI_NETWORK_NAME "network"
+#define WIFI_NETWORK_PASSWORD "password"

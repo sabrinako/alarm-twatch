@@ -5,10 +5,11 @@
 #include <WiFi.h> 
 #include <EEPROM.h>
 #include <soc/rtc.h>
-#include <SPIFFS.h>
+// #include <SPIFFS.h>
 #include "config.h"
 #include "main.h"
 #include "alarmFunctions.h"
+#include "appWifiTime.h"
 #include "appAlarm.h"
 #include "appSettings.h"
 #include "menu.h"
@@ -44,7 +45,6 @@ static void clock_screen_handler(lv_obj_t *obj, lv_event_t event) {
     main::ttgo->getTouch(current_x, current_y);
 
     if (current_y < y && abs(current_x - x) < 10) {
-      Serial.println("up");
       dragUpwards = true;
     } else {
       dragUpwards = false;
@@ -54,11 +54,9 @@ static void clock_screen_handler(lv_obj_t *obj, lv_event_t event) {
   }
 
   if (event == LV_EVENT_RELEASED) {
-    Serial.println("released");
     x = 240;
     y = 240;
     if (dragUpwards) {
-      Serial.println("menu");
       menu::appMenu();
       dragUpwards = false;
     }
@@ -69,7 +67,7 @@ void setup() {
   main::ttgo = TTGOClass::getWatch();
   main::ttgo->begin();
 
-  EEPROM.begin(50);
+  EEPROM.begin(EEPROM_SIZE);
 
   pinMode(4, OUTPUT); // vibration motor turn on
 
@@ -99,11 +97,10 @@ void setup() {
   main::ttgo->rtc->syncToSystem();
 
   Serial.begin(115200);
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
-  alarmfuncs::getAlarmsFromSpiffs();
+  // if (!SPIFFS.begin(true)) {
+  //   Serial.println("An Error has occurred while mounting SPIFFS");
+  //   return;
+  // }
   timefuncs::timeInit();
   timefuncs::setTime();
 

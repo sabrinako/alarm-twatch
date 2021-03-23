@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include "config.h"
 #include "main.h"
 #include "timeFunctions.h"
@@ -18,6 +19,7 @@ void utils::light_sleep() {
   main::power->setPowerOutPut(AXP202_LDO2, false); // v1, battery lasted 6hrs killing display only
   main::ttgo->closeBL();
   main::ttgo->displaySleep();
+  main::ttgo->disableTouchIRQ();
   setCpuFrequencyMhz(10);
   esp_sleep_enable_ext1_wakeup(GPIO_SEL_35, ESP_EXT1_WAKEUP_ALL_LOW);
   main::ttgo->powerOff();
@@ -30,6 +32,7 @@ void utils::wakeup() {
   main::power->setPowerOutPut(AXP202_LDO2, true); // v1
   setCpuFrequencyMhz(160);
   main::ttgo->displayWakeup();
+  main::ttgo->enableTouchIRQ();
   main::ttgo->openBL();
   main::ttgo->rtc->syncToSystem();
 }
@@ -52,4 +55,18 @@ void utils::updateBatteryLabel() {
   } else {
     lv_label_set_text_fmt(timefuncs::batt_lvl, LV_SYMBOL_BATTERY_1 "%d", batt_num);
   }
+}
+
+void utils::wifiConnect() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_NETWORK_NAME, WIFI_NETWORK_PASSWORD);
+
+  // while (WiFiMulti.run() != WL_CONNECTED) {
+  //   Serial.print(".");
+  // }
+}
+
+void utils::wifiDisconnect() {
+  WiFi.disconnect(true, true);
+  WiFi.mode(WIFI_OFF);
 }
