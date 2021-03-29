@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "main.h"
+#include "alarmFunctions.h"
 #include "appAlarm.h"
 #include "appSettings.h"
 #include "appWifiTime.h"
@@ -27,7 +28,7 @@ void menu_handler(lv_obj_t *obj, lv_event_t event) {
           appwifi::appWifiTime();
           break;
       case 1:
-          appalarm::appAlarm();
+          alarmfuncs::getAlarmsFromSheets();
           break;
       case 2:
           appsettings::appSettings();

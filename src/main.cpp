@@ -5,7 +5,7 @@
 #include <WiFi.h> 
 #include <EEPROM.h>
 #include <soc/rtc.h>
-// #include <SPIFFS.h>
+#include <SPIFFS.h>
 #include "config.h"
 #include "main.h"
 #include "alarmFunctions.h"
@@ -97,10 +97,10 @@ void setup() {
   main::ttgo->rtc->syncToSystem();
 
   Serial.begin(115200);
-  // if (!SPIFFS.begin(true)) {
-  //   Serial.println("An Error has occurred while mounting SPIFFS");
-  //   return;
-  // }
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
   timefuncs::timeInit();
   timefuncs::setTime();
 

@@ -89,7 +89,7 @@ void timefuncs::setTime() {
   lv_label_set_text_fmt(date_txt, "%s\n%s\n%d\n%d", daysOfTheWeek[main::day_of_week], months[main::mmonth], main::dday, main::yyear);
 
   if (main::ss == 0) {
-    alarmfuncs::alarmCheck(main::hh, main::mm, main::day_of_week); // needs to be called before we start changing the time #s for display
+    alarmfuncs::alarmCheckNew(main::hh, main::mm, main::day_of_week); // needs to be called before we start changing the time #s for display
   }
 
   if (main::hh > 12) {

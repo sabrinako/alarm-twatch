@@ -61,9 +61,7 @@ void utils::wifiConnect() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_NETWORK_NAME, WIFI_NETWORK_PASSWORD);
 
-  // while (WiFiMulti.run() != WL_CONNECTED) {
-  //   Serial.print(".");
-  // }
+  while (WiFi.status() != WL_CONNECTED) {}
 }
 
 void utils::wifiDisconnect() {

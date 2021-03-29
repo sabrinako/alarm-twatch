@@ -27,19 +27,23 @@ I've drawn inspiration from various sources. This project would not exist withou
     - Brightness value stored in EEPROM
 
 ## Known Issues
-- Alarm screen does not actually do anything yet
 - Wifi time sync automatically runs when menu option chosen
 - RARE: vibrate alarm goes off endlessly, stops when deep sleeping (hold external button 6 secs)
 - If multiple alarm pop-ups left on screen, pressing OK for the second one freezes/resets screen
 
 ## How To Build
-This project is built using PlatformIO. [Here](https://www.youtube.com/watch?v=7vOaqnmAkcg) is a good example of loading projects through PlatformIO/VSCode.
+This project is built using PlatformIO.
+Before uploading the build to your watch, please do this step first:
+> PlatformIO tab > Platform > Upload Filesystem Image
+
+We need to initialize SPIFFS in order for this version to work.
+[Here](https://www.youtube.com/watch?v=7vOaqnmAkcg) is a good example of loading projects through PlatformIO/VSCode.
 
 ## TODO
 - [ ] Fall asleep from screen inactivity
 - [ ] Add battery icon to home screen
-- [ ] New alarms + edit alarms through watch OR SheetsDB sync for alarms
-- [ ] Save alarm data to SPIFFS
+- [X] New alarms + edit alarms through watch OR SheetsDB sync for alarms
+- [X] Save alarm data to SPIFFS
 - [ ] Create more utility functions/clean code
 - [ ] Utilize memory more efficiently
 - [ ] Unit tests

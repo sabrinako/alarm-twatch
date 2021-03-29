@@ -1,11 +1,27 @@
 #include <ArduinoJson.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <time.h>
+#include <iostream>
+#include <bitset>
+#include <string>
+#include <cstring>
+#include <vector>
 #include <SPIFFS.h>
 #include "main.h"
 #include "alarmFunctions.h"
 #include "utils.h"
 
 using namespace main;
+
+HTTPClient https;
+
+char dbURL[40] = "https://sheetdb.io/api/v1/your_api_here";
+
+const char* rootCert = \
+"-----BEGIN CERTIFICATE-----\n" \
+"-----END CERTIFICATE-----\n";
 
 lv_obj_t * alarm_box;
 
@@ -28,15 +44,35 @@ struct Alarm {
   uint8_t hour;
   uint8_t minute;
   byte day_of_week;
-//  char dayOfWeek[8];
 };
 typedef struct Alarm Alarm;
 
 /* the array of alarms we've set */
 Alarm alarms_arr[] = {
-  {"Example Alarm", 9, 30, 9},
-  {"Take Meds", 10, 00, 8}
+  {"Example", 9, 30, 9},
+  {"Take Meds", 10, 0, 8}
 };
+
+struct NewAlarm {
+  char title[12];
+  uint8_t hour;
+  uint8_t minute;
+  std::bitset<8> day_of_week;
+};
+typedef struct NewAlarm NewAlarm;
+
+std::vector<NewAlarm> alarms_vector;
+
+/*
+  Function that tells us if a bit at nth spot is set to 1 (true) or 0 (false)
+ */
+bool is_bit_set(std::bitset<8> eight_bit, int n) {
+	//checking bit status, goes from right to left
+  for (int i=0; i<8; i++) {
+    Serial.println(eight_bit[i]);
+  }
+	return (eight_bit.test(n));
+}
 
 /*
    handler for button on alarm message pop up
@@ -46,7 +82,6 @@ static void alarm_btn_handler(lv_obj_t * obj, lv_event_t event) {
     lv_msgbox_start_auto_close(alarm_box, 10);
   }
 }
-
 
 /*
    create the ui pop up, called if we're expecting an alarm to go off
@@ -108,35 +143,112 @@ void alarmfuncs::alarmCheck(uint8_t hh, uint8_t mm, uint32_t day_of_week) {
 
     createAlarmPopup(results->title);
 
-    for ( int i = 0; i < 3; i = i + 1 ) {
+    for ( int i = 0; i < 4; i = i + 1 ) {
       utils::vibrate_watch();
     }
   }
 }
 
-/*
-* CURRENTLY NOT FUNCTIONAL
-*/
-void alarmfuncs::getAlarmsFromSpiffs() {
-  File file = SPIFFS.open("/alarms.txt", "w+");
-  while (file.available()) {
-    Serial.write(file.read());
+void alarmfuncs::alarmCheckNew(uint8_t hh, uint8_t mm, uint32_t dow) {
+  auto results = std::find_if(std::begin(alarms_vector), std::end(alarms_vector),
+    [hh, mm, dow] (NewAlarm item) {
+      return item.hour == hh && item.minute == mm && is_bit_set(item.day_of_week, dow);
+    });
+
+  if (results != std::end(alarms_vector)) {
+    if (!ttgo->bl->isOn()) {
+      utils::wakeup();
+    }
+
+    createAlarmPopup(results->title);
+
+    for ( int i = 0; i < 4; i = i + 1 ) {
+      utils::vibrate_watch();
+    }
   }
-//  StaticJsonDocument<2048> doc;
-//  DeserializationError err = deserializeJson(doc, file);
-//
-//  if (err) {
-//    Serial.print(F("deserializeJson() failed: "));
-//    Serial.println(err.f_str());
-//    return;
-//  }
-//  int counter = 0;
-//  for (JsonObject elem : doc.as<JsonArray>()) {
-//    char title_str[12] = {elem["title"]};
-//    Serial.println(title_str);
-//    alarms_vector[counter] = {elem["title"], elem["hour"], elem["minute"], elem["day_of_week"]};
-//    counter += 1;
-//  }
-//  Serial.println("The size of vector: ");
-//  Serial.println(alarms_vector[3].title);
+}
+
+// from https://github.com/paulmartinetti/twatch-take8
+String callHttps(String myUri) {
+  utils::wifiConnect();
+  WiFiClientSecure *client = new WiFiClientSecure;
+
+  if(client && WiFi.status() == WL_CONNECTED) {
+    client -> setCACert(rootCert);
+
+    if (https.begin(*client, myUri)) {
+      int httpCode = https.GET();
+      if (httpCode > 399) {
+        Serial.print("http error");
+        https.end();
+      } else if (httpCode > 0) {
+        // no longer need uri value, so swap w incoming json
+        // (saves memory creating another String)
+        myUri = https.getString();
+      }  else {
+        myUri = "[]";
+      }
+    } else {
+      myUri = "[]";
+    }
+  }
+
+  https.end();
+  utils::wifiDisconnect();
+  return myUri;
+}
+
+void saveAlarmsToSpiff(String alarm_json) {
+  File file = SPIFFS.open("/alarms.json", "w");
+  file.println(alarm_json);
+  file.close();
+
+  File testReadFile = SPIFFS.open("/alarms.json", "r");
+  Serial.println(testReadFile.readString());
+  testReadFile.close();
+}
+
+void readAlarmJson(String alarm_json) {
+  alarms_vector.clear();
+
+  DynamicJsonDocument doc(3072);
+  DeserializationError err = deserializeJson(doc, alarm_json);
+
+  if (err) {
+    Serial.println("Error with deserializing json. Try again");
+  }
+
+  for (JsonObject elem : doc.as<JsonArray>()) {
+    std::bitset<8> day_of_week;
+    const char* title = elem["title"];
+    // Serial.println(title);
+    const char* dow = elem["day_of_week"];
+    for (int i=0; i<8; i++) {
+      // Serial.println(dow[i]);
+      if(dow[i] == '0') {
+          day_of_week.set(i, false);
+      }
+      else if(dow[i] == '1') {
+          day_of_week.set(i, true);
+      }
+    }
+
+    NewAlarm current_alarm{};
+    std::strcpy(current_alarm.title, elem["title"]);
+    current_alarm.hour = std::atoi(elem["hour"]);
+    current_alarm.minute = std::atoi(elem["minute"]);
+    current_alarm.day_of_week = day_of_week;
+
+    alarms_vector.push_back(current_alarm);
+  }
+}
+
+/*
+* Function that makes HTTP call for alarm info, then saves to SPIFFS +
+* saves to current working memory
+*/
+void alarmfuncs::getAlarmsFromSheets() {
+  String alarm_json = callHttps(dbURL);
+  saveAlarmsToSpiff(alarm_json);
+  readAlarmJson(alarm_json);
 }
